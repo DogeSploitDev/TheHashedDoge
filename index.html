@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doge Hash Brute Force Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5dc;
+            color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        h1 {
+            color: #f1c40f;
+        }
+        #container {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            width: 400px;
+        }
+        input, select, button {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 10px;
+            padding: 10px;
+            border: 2px solid #f1c40f;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #f1c40f;
+            color: #34495e;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #f39c12;
+        }
+        #output {
+            margin-top: 20px;
+            color: #e74c3c;
+        }
+        #hashesPerSecond {
+            color: #2ecc71;
+            margin-top: 10px;
+        }
+        #progress {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #progressBar {
+            height: 100%;
+            background-color: #f1c40f;
+            width: 0;
+            transition: width 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <h1>Doge Hash Brute Forcer</h1>
+    <input type="text" id="hash" placeholder="Enter Hash Here" />
+    <select id="algorithm">
+        <option value="md5">MD5</option>
+        <option value="sha256">SHA-256</option>
+        <option value="sha512">SHA-512</option>
+    </select>
+    <input type="text" id="characters" placeholder="Character Set (e.g., abcdefghij0123)" />
+    <input type="number" id="length" placeholder="Max Password Length" min="1" max="10" value="4"/>
+    <button id="startBtn">Start Brute Force</button>
+    <button id="stopBtn" disabled>Stop Brute Force</button>
+    <div id="progress"><div id="progressBar"></div></div>
+    <div id="output"></div>
+    <div id="hashesPerSecond"></div>
+</div>
+
+<script>
+    let workers = [];
+    const maxWorkers = navigator.hardwareConcurrency || 4;
+
+    function createWorker() {
+        const blob = new Blob([`
+            importScripts('https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js');
+
+            async function hashSHA256(password) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(hashBuffer)).map(b => ('00' + b.toString(16)).slice(-2)).join('');
+            }
+
+            async function hashSHA512(password) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-512', data);
+                return Array.from(new Uint8Array(hashBuffer)).map(b => ('00' + b.toString(16)).slice(-2)).join('');
+            }
+
+            self.onmessage = async function(event) {
+                const { hash, characters, length, startIndex, endIndex, algorithm, totalAttempts } = event.data;
+
+                const charLength = characters.length;
+                let attempts = 0;
+                const startTime = performance.now();
+
+                for (let i = startIndex; i < endIndex; i++) {
+                    let password = '';
+                    let index = i;
+
+                    // Generate the password for the current numeric index
+                    for (let j = 0; j < length; j++) {
+                        password += characters[index % charLength];
+                        index = Math.floor(index / charLength);
+                    }
+
+                    let hashed;
+                    if (algorithm === 'md5') {
+                        hashed = SparkMD5.hash(password);
+                    } else if (algorithm === 'sha256') {
+                        hashed = await hashSHA256(password);
+                    } else if (algorithm === 'sha512') {
+                        hashed = await hashSHA512(password);
+                    }
+
+                    attempts++;
+
+                    if (hashed === hash) {
+                        self.postMessage({ result: password });
+                        return;
+                    }
+
+                    if (attempts % 1000 === 0) {
+                        const elapsedTime = (performance.now() - startTime) / 1000; // Elapsed time in seconds
+                        const hashesPerSecond = (attempts / elapsedTime).toFixed(2);
+                        self.postMessage({ progress: (i / totalAttempts) * 100, hashesPerSecond });
+                    }
+                }
+                self.postMessage({ progress: (endIndex / totalAttempts) * 100 });
+            };
+        `], { type: 'application/javascript' });
+
+        return new Worker(URL.createObjectURL(blob));
+    }
+
+    function startBruteForce() {
+        const hash = document.getElementById("hash").value.trim().toLowerCase();
+        const characters = document.getElementById("characters").value;
+        const length = parseInt(document.getElementById("length").value);
+        const selectedAlgorithm = document.getElementById("algorithm").value;
+
+        if (!hash || !characters || length <= 0) {
+            document.getElementById('output').innerText = 'Please fill in all fields correctly.';
+            return;
+        }
+
+        document.getElementById('output').innerText = 'Brute forcing...';
+        document.getElementById('progressBar').style.width = '0%';
+        const totalAttempts = Math.pow(characters.length, length);
+        document.getElementById('stopBtn').disabled = false;
+        
+        workers.forEach(w => w.terminate());
+        workers = [];
+
+        for (let i = 0; i < maxWorkers; i++) {
+            const worker = createWorker();
+            workers.push(worker);
+
+            const startIndex = i * Math.floor(totalAttempts / maxWorkers);
+            const endIndex = (i === maxWorkers - 1) ? totalAttempts : startIndex + Math.floor(totalAttempts / maxWorkers);
+            worker.postMessage({ hash, characters, length, startIndex, endIndex, algorithm: selectedAlgorithm, totalAttempts });
+
+            worker.onmessage = function(event) {
+                const { result, progress, hashesPerSecond } = event.data;
+                if (result) {
+                    document.getElementById('output').innerText = `Password Found: ${result}`;
+                    workers.forEach(w => w.terminate());
+                    workers = [];
+                    document.getElementById('stopBtn').disabled = true;
+                } else if (progress !== undefined) {
+                    document.getElementById('progressBar').style.width = progress + '%';
+                }
+                if (hashesPerSecond) {
+                    document.getElementById('hashesPerSecond').innerText = `Hashes per second: ${hashesPerSecond}`;
+                }
+            };
+        }
+    }
+
+    document.getElementById("startBtn").onclick = startBruteForce;
+
+    document.getElementById("stopBtn").onclick = function() {
+        workers.forEach(w => w.terminate());
+        workers = [];
+        document.getElementById('output').innerText = 'Stopped.';
+        document.getElementById('stopBtn').disabled = true;
+        document.getElementById('hashesPerSecond').innerText = '';
+    };
+</script>
+
+</body>
+</html>
