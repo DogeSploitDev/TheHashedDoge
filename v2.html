@@ -71,7 +71,7 @@
             margin-top: 20px;
             color: var(--error-color);
         }
-        #hashesPerSecond {
+        #hashesPerSecond, #elapsedTime, #eta {
             color: var(--success-color);
             margin-top: 10px;
         }
@@ -124,6 +124,8 @@
     </div>
     <div id="output" role="alert"></div>
     <div id="hashesPerSecond"></div>
+    <div id="elapsedTime"></div>
+    <div id="eta"></div>
     <div id="status"></div>
 </div>
 
@@ -189,9 +191,9 @@
 
                             if (attempts % 1000 === 0 || attempts === maxIndex) {
                                 const progress = (attempts / totalAttempts) * 100;
-                                const elapsedTime = (performance.now() - startTime) / 1000;
+                                const elapsedTime = (performance.now() - startTime) / 1000; // in seconds
                                 const hashesPerSecond = (attempts / elapsedTime).toFixed(2);
-                                self.postMessage({ progress, hashesPerSecond, status: password, attempts });
+                                self.postMessage({ progress, hashesPerSecond, status: password, attempts, elapsedTime });
                             }
                         }
                     }
@@ -204,7 +206,6 @@
 
         validateInputs(hash, characters, minLength, maxLength) {
             let isValid = true;
-            // Clear previous error indications
             document.querySelectorAll('.error').forEach(error => error.classList.add('hidden'));
             document.querySelectorAll('input').forEach(input => input.classList.remove('error'));
 
@@ -237,6 +238,19 @@
             document.getElementById('hashesPerSecond').innerText = `Hashes per second: ${hashes}`;
         },
 
+        updateElapsedTime(elapsedTime) {
+            document.getElementById('elapsedTime').innerText = `Elapsed Time: ${elapsedTime.toFixed(2)} seconds`;
+        },
+
+        updateETA(totalAttempts, elapsedTime, attempts) {
+            if (attempts > 0) {
+                const remainingAttempts = totalAttempts - attempts;
+                const hashesPerSecond = attempts / elapsedTime;
+                const eta = (remainingAttempts / hashesPerSecond).toFixed(2);
+                document.getElementById('eta').innerText = `ETA: ${eta} seconds`;
+            }
+        },
+
         startBruteForce() {
             const hash = document.getElementById("hash").value.trim().toLowerCase();
             const characters = document.getElementById("characters").value;
@@ -267,7 +281,7 @@
                 worker.postMessage({ hash, characters, lengthMin: minLength, lengthMax: maxLength, algorithm: selectedAlgorithm, totalAttempts });
 
                 worker.onmessage = (event) => {
-                    const { result, progress, hashesPerSecond, status, attempts } = event.data;
+                    const { result, progress, hashesPerSecond, status, attempts, elapsedTime } = event.data;
                     if (result) {
                         document.getElementById('output').innerText = `Password Found: ${result}`;
                         this.workers.forEach(w => w.terminate());
@@ -276,9 +290,9 @@
                     } else if (progress !== undefined) {
                         this.updateProgressBar(progress);
                         this.updateStatus(status, attempts);
-                    }
-                    if (hashesPerSecond) {
                         this.updateHashesPerSecond(hashesPerSecond);
+                        this.updateElapsedTime(elapsedTime);
+                        this.updateETA(totalAttempts, elapsedTime, attempts);
                     }
                 };
             }
@@ -307,6 +321,8 @@
         document.getElementById('output').innerText = 'Stopped.';
         document.getElementById('stopBtn').disabled = true;
         document.getElementById('hashesPerSecond').innerText = '';
+        document.getElementById('elapsedTime').innerText = '';
+        document.getElementById('eta').innerText = '';
         document.getElementById('status').innerText = '';
     };
     document.getElementById("themeToggle").onclick = () => app.toggleTheme();
