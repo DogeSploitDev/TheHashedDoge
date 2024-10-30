@@ -13,5 +13,3 @@
 - High Speed Hash Cracking
 - Configurable Minimum/Maximum string length
 
-# V1 has a faster cracking algorithm, but is less feature rich/configurable.
-
