@@ -5,12 +5,13 @@
 **V2 CDN URL**: [https://rawcdn.githack.com/DogeLeader/TheHashedDoge/main/v2.html](url)
 
 
-**INCLUDED FEATURES:**
+**V2 INCLUDED FEATURES:**
 - MD5 CRACKING SUPPORT
 - SHA256 CRACKING SUPPORT
 - SHA512 CRACKING SUPPORT
 - Modern, Visually Pleasing Interface
 - High Speed Hash Cracking
+- Configurable Minimum/Maximum string length
 
 # V1 has a faster cracking algorithm, but is less feature rich/configurable.
 
