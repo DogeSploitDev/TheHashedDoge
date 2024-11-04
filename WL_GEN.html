@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,6 +45,7 @@
         }
     </style>
 </head>
+
 <body>
     <h1>Word List Generator</h1>
 
@@ -91,33 +93,30 @@
         }
 
         function generateWords(minLength, maxLength, maxWords) {
-            const generatedWords = [];
-            const lengthRange = maxLength - minLength + 1;
+            const generatedWords = new Array(maxWords);
+            const charLen = characters.length;
 
-            for (let length = minLength; length <= maxLength; length++) {
-                const count = Math.min(Math.pow(characters.length, length), maxWords - generatedWords.length);
+            let totalWordsGenerated = 0;
 
-                for (let i = 0; i < count; i++) {
-                    let word = "";
+            for (let length = minLength; length <= maxLength && totalWordsGenerated < maxWords; length++) {
+                const count = Math.min(Math.pow(charLen, length), maxWords - totalWordsGenerated);
+
+                for (let i = 0; i < count && totalWordsGenerated < maxWords; i++) {
+                    // Use a continuous array to build the word
+                    const word = new Array(length);
+
                     let num = i;
-
-                    for (let pos = 0; pos < length; pos++) {
-                        word += characters[num % characters.length];
-                        num = Math.floor(num / characters.length);
+                    for (let pos = length - 1; pos >= 0; pos--) {
+                        word[pos] = characters[num % charLen];
+                        num = Math.floor(num / charLen);
                     }
-                    generatedWords.push(word);
-                    if (generatedWords.length >= maxWords) {
-                        break;
-                    }
-                }
 
-                if (generatedWords.length >= maxWords) {
-                    break;
+                    generatedWords[totalWordsGenerated++] = word.join('');
                 }
             }
-            
-            // Asynchronously download the file to avoid blocking UI
-            setTimeout(() => downloadFile(generatedWords), 0);
+
+            // Use Blob directly from the generated words array
+            setTimeout(() => downloadFile(generatedWords.slice(0, totalWordsGenerated)), 0);
         }
 
         function downloadFile(generatedWords) {
@@ -129,7 +128,6 @@
             link.click();
             document.body.removeChild(link);
             document.getElementById('output').textContent = generatedWords.slice(0, 20).join('\n') + '\n...';
-            // Display total words generated
             document.getElementById('progress').textContent = `Total words generated: ${generatedWords.length}`;
         }
 
@@ -166,7 +164,7 @@
             // Clear previous output and progress
             document.getElementById('output').textContent = "";
             document.getElementById('progress').textContent = "";
-            
+
             generateWords(minLength, maxLength, maxWords);
         });
 
@@ -174,4 +172,5 @@
         updateCharacterSet();
     </script>
 </body>
+
 </html>
