@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word List Generator</title>
+    <style>
+        body {
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+        }
+
+        button {
+            background-color: green;
+            color: black;
+            border: 1px solid green;
+            padding: 10px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        button:hover {
+            background-color: darkgreen;
+            color: white;
+        }
+
+        pre {
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid green;
+            overflow: auto;
+        }
+
+        label {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word List Generator</h1>
+
+    <div>
+        <strong>Select Character Types:</strong><br>
+        <button id="toggleUppercase">Toggle Uppercase (A-Z)</button>
+        <button id="toggleLowercase">Toggle Lowercase (a-z)</button>
+        <button id="toggleNumbers">Toggle Numbers (0-9)</button>
+        <button id="toggleSpecialChars">Toggle Special Characters</button>
+    </div>
+
+    <div>
+        <strong>Selected Characters:</strong> <span id="selectedChars"></span>
+    </div>
+
+    <div>
+        <label>Min Length: <input type="number" id="minLength" value="1" min="1"></label>
+        <label>Max Length: <input type="number" id="maxLength" value="6" min="1"></label>
+        <button id="generateButton">Generate and Download Word List</button>
+    </div>
+
+    <pre id="output"></pre>
+
+    <script>
+        let includeUppercase = true;
+        let includeLowercase = true;
+        let includeNumbers = true;
+        let includeSpecialChars = true;
+
+        const uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
+        const numberChars = "0123456789";
+        const specialChars = "!@#$%^&*()-_=+[]{};:,.<>?";
+        let characters = "";
+
+        function updateCharacterSet() {
+            characters = "";
+            if (includeUppercase) characters += uppercaseChars;
+            if (includeLowercase) characters += lowercaseChars;
+            if (includeNumbers) characters += numberChars;
+            if (includeSpecialChars) characters += specialChars;
+            document.getElementById('selectedChars').textContent = characters || "None selected";
+        }
+
+        function generateWords(minLength, maxLength) {
+            generatedWords = [];
+            for (let length = minLength; length <= maxLength; length++) {
+                generateCombinations('', length);
+            }
+            downloadFile();
+        }
+
+        function generateCombinations(current, length) {
+            if (current.length === length) {
+                generatedWords.push(current);
+                return;
+            }
+
+            for (let c of characters) {
+                generateCombinations(current + c, length);
+            }
+        }
+
+        function downloadFile() {
+            const blob = new Blob([generatedWords.join('\n')], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'wordlist.txt';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            document.getElementById('output').textContent = generatedWords.slice(0, 20).join('\n') + '\n...';
+        }
+
+        document.getElementById('toggleUppercase').addEventListener('click', () => {
+            includeUppercase = !includeUppercase;
+            updateCharacterSet();
+        });
+
+        document.getElementById('toggleLowercase').addEventListener('click', () => {
+            includeLowercase = !includeLowercase;
+            updateCharacterSet();
+        });
+
+        document.getElementById('toggleNumbers').addEventListener('click', () => {
+            includeNumbers = !includeNumbers;
+            updateCharacterSet();
+        });
+
+        document.getElementById('toggleSpecialChars').addEventListener('click', () => {
+            includeSpecialChars = !includeSpecialChars;
+            updateCharacterSet();
+        });
+
+        document.getElementById('generateButton').addEventListener('click', () => {
+            const minLength = parseInt(document.getElementById('minLength').value);
+            const maxLength = parseInt(document.getElementById('maxLength').value);
+
+            if (characters === "") {
+                alert("Please select at least one character type.");
+                return;
+            }
+
+            generateWords(minLength, maxLength);
+        });
+
+        // Initialize character set
+        updateCharacterSet();
+    </script>
+</body>
+</html>
