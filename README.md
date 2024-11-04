@@ -4,6 +4,8 @@
 
 **V2 CDN URL**: [https://rawcdn.githack.com/DogeLeader/TheHashedDoge/main/v2.html](url)
 
+**V3 CDN URL** [https://rawcdn.githack.com/DogeClan/TheHashedDoge/main/v3.html](url)
+
 
 **V3 INCLUDED FEATURES:**
 - MD5 CRACKING SUPPORT
