@@ -1,8 +1,8 @@
 # THE CDN HOST URL's ARE LINKED BELOW FOR THOSE WHO DON'T WANT TO RUN THIS LOCALLY:
 
-**V1 CDN URL**: [https://rawcdn.githack.com/DogeClan/TheHashedDoge/main/v1.html](url)
+**V1 CDN URL**: [https://rawcdn.githack.com/DogeLeader/TheHashedDoge/main/v1.html](url)
 
-**V2 CDN URL**: [https://rawcdn.githack.com/DogeClan/TheHashedDoge/main/v2.html](url)
+**V2 CDN URL**: [https://rawcdn.githack.com/DogeLeader/TheHashedDoge/main/v2.html](url)
 
 **V3 CDN URL** [https://rawcdn.githack.com/DogeClan/TheHashedDoge/main/v3.html](url)
 
