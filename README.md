@@ -1,10 +1,10 @@
 # THE CDN HOST URL's ARE LINKED BELOW FOR THOSE WHO DON'T WANT TO RUN THIS LOCALLY:
 
-**V1 CDN URL**: [https://dogeclan.github.io/TheHashedDoge/v1.html](url)
+**V1 CDN URL**: [https://dogeclan.github.io/TheHashedDoge/v1.html](url) or [https://thd.ssp.42web.io/v1.html](url)
 
-**V2 CDN URL**: [https://dogeclan.github.io/TheHashedDoge/v2.html](url)
+**V2 CDN URL**: [https://dogeclan.github.io/TheHashedDoge/v2.html](url) or [https://thd.ssp.42web.io/v2.html](url)
 
-**V3 CDN URL**: [https://dogeclan.github.io/TheHashedDoge/v3.html](url)
+**V3 CDN URL**: [https://dogeclan.github.io/TheHashedDoge/v3.html](url) or [https://thd.ssp.42web.io/v3.html](url)
 
 
 **V3 INCLUDED FEATURES:**
