@@ -12,6 +12,6 @@
 - SHA256 CRACKING SUPPORT
 - SHA512 CRACKING SUPPORT
 - Modern, Visually Pleasing Interface, Exploit theme
-- Extreme Speed Hash Cracking
+- Extreme Speed Hash Cracking (considering JS)
 - Configurable Minimum/Maximum string length
 
