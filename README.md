@@ -5,7 +5,7 @@
 
 **V2 URL**: [https://dogeclan.github.io/TheHashedDoge/v2.html](https://dogeclan.github.io/TheHashedDoge/v2.html) or [https://thd.ssp.42web.io/v2.html](https://thd.ssp.42web.io/v2.html)
 
-**V3 URL**: [https://dogeclan.github.io/TheHashedDoge/v3.html](https://dogeclan.github.io/TheHashedDoge/v3.html) or [https://thd.ssp.42web.io/v3-new.html](https://thd.ssp.42web.io/v3.html)
+**V3 URL**: [https://dogeclan.github.io/TheHashedDoge/v3.html](https://dogeclan.github.io/TheHashedDoge/v3.html) or [https://thd.ssp.42web.io/v3-new.html](https://thd.ssp.42web.io/v3-new.html)
 
 **V3 WASM VERSION URL**: [https://thd-wasm-v2.ssp.42web.io/](https://thd-wasm-v2.ssp.42web.io/)
 
