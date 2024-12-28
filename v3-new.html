@@ -49,7 +49,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
-            max-width: 450px;
+            max-width: 500px;
             width: 100%;
             border: 2px solid var(--highlight-color);
         }
@@ -81,6 +81,8 @@
             color: var(--bg-color);
             cursor: pointer;
             font-weight: bold;
+            position: relative;
+            overflow: hidden;
             transition: var(--button-transition);
             border: none; /* Remove default border */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Shadow to give depth */
@@ -193,9 +195,18 @@
         <span id="charsError" class="hidden">Please enter a valid character set.</span>
         <input type="number" id="minLength" placeholder="Min Password Length" min="1" max="10" value="1" aria-label="Minimum password length" />
         <input type="number" id="maxLength" placeholder="Max Password Length" min="1" max="10" value="4" aria-label="Maximum password length" />
+        
         <button id="startBtn" aria-describedby="start-help">Start Brute Force</button>
         <button id="stopBtn" disabled aria-label="Stop brute force">Stop Brute Force</button>
+        <button id="terminateAllBtn" disabled aria-label="Terminate all workers">Terminate All Workers</button>
         <button id="themeToggle">Toggle Dark Mode</button>
+
+        <!-- New Features -->
+        <input type="text" id="hashesInput" placeholder="Enter multiple hashes separated by new lines" aria-label="Multiple hashes" class="hidden" />
+        <button id="batchCrackBtn" aria-label="Batch crack hashes" class="hidden">Batch Crack</button>
+        <div id="strengthOutput" class="hidden"></div>
+        <div id="stopwatch">Elapsed Time: 0.00 seconds</div>
+
         <div id="progress">
             <div id="progressBar" role="progressbar" aria-label="Progress"></div>
         </div>
@@ -205,6 +216,8 @@
         <div id="elapsedTime"></div>
         <div id="eta"></div>
         <div id="status"></div>
+        <button id="exportBtn" disabled>Export Cracked Passwords</button>
+        <div id="crackedPasswords" class="hidden"></div>
     </div>
 
     <script>
@@ -212,6 +225,9 @@
             workers: [],
             maxWorkers: navigator.hardwareConcurrency || 4,
             isDarkMode: true, // Track the theme state
+            elapsedTime: 0, // Track elapsed time
+            timerInterval: null, // Interval for stopwatch
+            crackedPasswords: [], // Store cracked passwords for export
 
             createWorker() {
                 const blob = new Blob([`
@@ -268,11 +284,10 @@
                                     return;
                                 }
 
-                                // Update UI once every 10,000 attempts
-                                if (attempts % 10000 === 0 || attempts === maxIndex) {
+                                if (attempts % 1000 === 0 || attempts === maxIndex) {
+                                    const progress = (attempts / totalAttempts) * 100;
                                     const elapsedTime = (performance.now() - startTime) / 1000; // in seconds
                                     const hashesPerSecond = (attempts / elapsedTime).toFixed(2);
-                                    const progress = (attempts / totalAttempts) * 100;
                                     self.postMessage({ progress, hashesPerSecond, status: password, attempts, elapsedTime });
                                 }
                             }
@@ -350,10 +365,14 @@
                 }
 
                 document.getElementById('stopBtn').disabled = false;
+                document.getElementById('terminateAllBtn').disabled = false;
                 document.getElementById('status').innerText = '';
 
                 this.workers.forEach(w => w.terminate());
                 this.workers = [];
+
+                // Start stopwatch
+                this.startTimer();
 
                 for (let i = 0; i < this.maxWorkers; i++) {
                     const worker = this.createWorker();
@@ -364,11 +383,14 @@
                     worker.onmessage = (event) => {
                         const { result, progress, hashesPerSecond, status, attempts, elapsedTime } = event.data;
                         if (result) {
+                            this.crackedPasswords.push(result); // Store cracked password
                             document.getElementById('output').innerText = `Password Found: ${result}`;
                             document.getElementById('loadingSpinner').style.display = 'none'; // Hide loading spinner
                             this.workers.forEach(w => w.terminate());
                             this.workers = [];
                             document.getElementById('stopBtn').disabled = true;
+                            document.getElementById('exportBtn').disabled = false; // Enable export
+                            this.stopTimer();
                         } else if (progress !== undefined) {
                             this.updateProgressBar(progress);
                             this.updateStatus(status, attempts);
@@ -378,6 +400,48 @@
                         }
                     };
                 }
+            },
+
+            startTimer() {
+                this.elapsedTime = 0; // Reset time
+                this.timerInterval = setInterval(() => {
+                    this.elapsedTime += 0.1; // Increment time by 0.1 seconds
+                    document.getElementById('stopwatch').innerText = `Elapsed Time: ${this.elapsedTime.toFixed(2)} seconds`;
+                }, 100);
+            },
+
+            stopTimer() {
+                clearInterval(this.timerInterval);
+            },
+
+            estimatePasswordStrength(password) {
+                const strengthOutput = document.getElementById('strengthOutput');
+                let strength = "Weak";
+                if (password.length >= 8) {
+                    strength = "Medium";
+                }
+                if (password.match(/[a-z]/) && password.match(/[A-Z]/) && password.match(/[0-9]/) && password.match(/[^a-zA-Z0-9]/)) {
+                    strength = "Strong";
+                }
+                strengthOutput.innerText = `Password Strength: ${strength}`;
+                strengthOutput.classList.remove('hidden');
+            },
+
+            batchCrack() {
+                const hashesInput = document.getElementById("hashesInput").value.trim().split('\n');
+                hashesInput.forEach(hash => {
+                    // Initialize brute force for each hash
+                    this.startBruteForce();
+                });
+                document.getElementById('hashesInput').value = ''; // Clear the input field after batch cracking
+            },
+
+            exportCrackedPasswords() {
+                const blob = new Blob([this.crackedPasswords.join('\n')], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'cracked_passwords.txt';
+                link.click();
             },
 
             toggleTheme() {
@@ -398,34 +462,4 @@
                 } else {
                     document.body.style.backgroundColor = '#f5f5dc';
                     document.body.style.color = '#2c3e50';
-                    document.getElementById('container').style.backgroundColor = '#34495e';
-                    document.querySelectorAll('input, select, button').forEach(element => {
-                        element.style.borderColor = '#ccc';
-                        element.style.color = '#000';
-                        if (element.tagName === 'BUTTON') {
-                            element.style.backgroundColor = '#ccc';
-                        }
-                    });
-                    document.getElementById('themeToggle').innerText = 'Switch to Dark Mode';
-                }
-            }
-        };
-
-        document.getElementById("startBtn").onclick = () => app.startBruteForce();
-        document.getElementById("stopBtn").onclick = () => {
-            app.workers.forEach(w => w.terminate());
-            app.workers = [];
-            document.getElementById('output').innerText = 'Stopped.';
-            document.getElementById('loadingSpinner').style.display = 'none'; // Hide loading spinner when stopped
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('hashesPerSecond').innerText = '';
-            document.getElementById('elapsedTime').innerText = '';
-            document.getElementById('eta').innerText = '';
-            document.getElementById('status').innerText = '';
-        };
-        document.getElementById("themeToggle").onclick = () => app.toggleTheme();
-    </script>
-
-</body>
-
-</html>
+                    document.getEleme
